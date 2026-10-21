@@ -1,4 +1,6 @@
 import itertools
+import math
+import random
 from contextlib import redirect_stdout
 from io import StringIO
 import unittest
@@ -61,6 +63,30 @@ def check_red_black(tree: RedBlackTree) -> list[int]:
         )
 
     return visit(tree.root, None, None)[1]
+
+
+TREES = (
+    (AVLTree, check_avl),
+    (RedBlackTree, check_red_black),
+)
+
+
+def kids(tree, key):
+    node = tree.search(key)
+    empty = getattr(tree, "nil", None)
+    return (node.left is not empty) + (node.right is not empty)
+
+
+def height(tree, node):
+    if node is getattr(tree, "nil", None):
+        return 0
+    return 1 + max(height(tree, node.left), height(tree, node.right))
+
+
+def fill(tree, check, keys):
+    for key in keys:
+        assert tree.insert(key)
+        check(tree)
 
 
 class TreeOperationsTests(unittest.TestCase):
@@ -131,6 +157,147 @@ class TreeOperationsTests(unittest.TestCase):
             self.assertIsNotNone(tree.search(0))
             self.assertTrue(tree.remove(0))
             self.assertEqual(check(tree), [-4, -1, 9])
+
+
+class ScenarioTests(unittest.TestCase):
+    def test_ascending_insertion(self):
+        keys = list(range(1, 101))
+        for tree_type, check in TREES:
+            with self.subTest(tree=tree_type.__name__):
+                tree = tree_type()
+                fill(tree, check, keys)
+                self.assertEqual(tree.in_order(), keys)
+
+    def test_descending_insertion(self):
+        keys = list(range(100, 0, -1))
+        for tree_type, check in TREES:
+            with self.subTest(tree=tree_type.__name__):
+                tree = tree_type()
+                fill(tree, check, keys)
+                self.assertEqual(tree.in_order(), sorted(keys))
+
+    def test_unordered_insertion(self):
+        keys = random.Random(7).sample(range(1000), 200)
+        for tree_type, check in TREES:
+            with self.subTest(tree=tree_type.__name__):
+                tree = tree_type()
+                fill(tree, check, keys)
+                self.assertEqual(tree.in_order(), sorted(keys))
+
+    def test_search_existing_and_missing(self):
+        keys = list(range(0, 100, 2))
+        for tree_type, check in TREES:
+            with self.subTest(tree=tree_type.__name__):
+                tree = tree_type()
+                fill(tree, check, keys)
+                for key in keys:
+                    self.assertEqual(tree.search(key).key, key)
+                for key in (-5, 1, 51, 99, 100, 500):
+                    self.assertIsNone(tree.search(key))
+
+    def test_remove_by_number_of_children(self):
+        full = [10, 5, 15, 3, 7, 12, 20]
+        cases = (
+            (full, 3, 0),
+            (full, 20, 0),
+            (full, 5, 2),
+            (full, 10, 2),
+            ([10, 5, 15, 3], 5, 1),
+            ([10, 5, 15, 12], 15, 1),
+            ([10, 5], 10, 1),
+            ([10], 10, 0),
+        )
+        for tree_type, check in TREES:
+            for keys, key, count in cases:
+                with self.subTest(tree=tree_type.__name__, key=key, kids=count):
+                    tree = tree_type()
+                    fill(tree, check, keys)
+                    self.assertEqual(kids(tree, key), count)
+                    self.assertTrue(tree.remove(key))
+                    self.assertIsNone(tree.search(key))
+                    expected = sorted(k for k in keys if k != key)
+                    self.assertEqual(check(tree), expected)
+                    self.assertEqual(tree.in_order(), expected)
+
+    def test_remove_missing(self):
+        keys = [10, 5, 15, 3, 7]
+        for tree_type, check in TREES:
+            with self.subTest(tree=tree_type.__name__):
+                tree = tree_type()
+                fill(tree, check, keys)
+                self.assertFalse(tree.remove(99))
+                self.assertFalse(tree.remove(-1))
+                self.assertEqual(check(tree), sorted(keys))
+                self.assertTrue(tree.remove(7))
+                self.assertFalse(tree.remove(7))
+                self.assertEqual(check(tree), [3, 5, 10, 15])
+
+    def test_empty_tree(self):
+        for tree_type, check in TREES:
+            with self.subTest(tree=tree_type.__name__):
+                tree = tree_type()
+                self.assertIsNone(tree.search(1))
+                self.assertFalse(tree.remove(1))
+                self.assertEqual(tree.in_order(), [])
+                self.assertEqual(tree.show(), "(árvore vazia)")
+                self.assertEqual(check(tree), [])
+
+    def test_single_element(self):
+        for tree_type, check in TREES:
+            with self.subTest(tree=tree_type.__name__):
+                tree = tree_type()
+                self.assertTrue(tree.insert(1))
+                self.assertFalse(tree.insert(1))
+                self.assertEqual(tree.search(1).key, 1)
+                self.assertIsNone(tree.search(2))
+                self.assertFalse(tree.remove(2))
+                self.assertEqual(check(tree), [1])
+                self.assertIn("Raiz: 1", tree.show())
+                self.assertTrue(tree.remove(1))
+                self.assertEqual(check(tree), [])
+                self.assertTrue(tree.insert(2))
+                self.assertEqual(check(tree), [2])
+
+    def test_balance_after_insertions_and_removals(self):
+        rnd = random.Random(3)
+        keys = rnd.sample(range(1000), 300)
+        removed = rnd.sample(keys, 150)
+        for tree_type, check in TREES:
+            with self.subTest(tree=tree_type.__name__):
+                tree = tree_type()
+                fill(tree, check, keys)
+                left = set(keys)
+                for key in removed:
+                    self.assertTrue(tree.remove(key))
+                    left.remove(key)
+                    self.assertEqual(check(tree), sorted(left))
+
+    def test_height_stays_small(self):
+        n = 1000
+        for tree_type, check in TREES:
+            with self.subTest(tree=tree_type.__name__):
+                tree = tree_type()
+                for key in range(1, n + 1):
+                    tree.insert(key)
+                check(tree)
+                self.assertLessEqual(height(tree, tree.root), 2 * math.log2(n + 1))
+
+    def test_same_operations_on_both_trees(self):
+        rnd = random.Random(5)
+        ops = [(rnd.choice("ir"), rnd.randrange(60)) for _ in range(600)]
+        for tree_type, check in TREES:
+            with self.subTest(tree=tree_type.__name__):
+                tree = tree_type()
+                model = set()
+                for op, key in ops:
+                    if op == "i":
+                        self.assertEqual(tree.insert(key), key not in model)
+                        model.add(key)
+                    else:
+                        self.assertEqual(tree.remove(key), key in model)
+                        model.discard(key)
+                    self.assertEqual(check(tree), sorted(model))
+                self.assertEqual(tree.in_order(), sorted(model))
 
 
 class MainProgramTests(unittest.TestCase):
