@@ -7,6 +7,7 @@ import unittest
 from unittest.mock import patch
 
 from avl import AVLTree
+from compare import compare
 from main import choose_tree, run
 from red_black import RedBlackTree
 
@@ -298,6 +299,21 @@ class ScenarioTests(unittest.TestCase):
                         model.discard(key)
                     self.assertEqual(check(tree), sorted(model))
                 self.assertEqual(tree.in_order(), sorted(model))
+
+
+class CompareTests(unittest.TestCase):
+    def test_height_and_rotations(self):
+        for tree_type, check in TREES:
+            tree = tree_type()
+            self.assertEqual(tree.height(), 0)
+            for key in (1, 2, 3):
+                tree.insert(key)
+            self.assertEqual(tree.height(), 2)
+            self.assertEqual(tree.rotations, 1)
+
+    def test_compare_rows(self):
+        rows = compare(50)
+        self.assertEqual(len(rows), 6)
 
 
 class MainProgramTests(unittest.TestCase):

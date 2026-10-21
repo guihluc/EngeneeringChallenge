@@ -17,6 +17,16 @@ class RedBlackTree:
         self.nil.right = self.nil
         self.nil.parent = self.nil
         self.root = self.nil
+        self.rotations = 0
+        self.recolors = 0
+
+    def height(self) -> int:
+        def visit(node: Node) -> int:
+            if node is self.nil:
+                return 0
+            return 1 + max(visit(node.left), visit(node.right))
+
+        return visit(self.root)
 
     def search(self, key: int) -> Node | None:
         node = self.root
@@ -89,6 +99,7 @@ class RedBlackTree:
         return True
 
     def _rotate_left(self, node: Node) -> None:
+        self.rotations += 1
         child = node.right
         node.right = child.left
         if child.left is not self.nil:
@@ -106,6 +117,7 @@ class RedBlackTree:
         node.parent = child
 
     def _rotate_right(self, node: Node) -> None:
+        self.rotations += 1
         child = node.left
         node.left = child.right
         if child.right is not self.nil:
@@ -127,6 +139,7 @@ class RedBlackTree:
             if node.parent is node.parent.parent.left:
                 uncle = node.parent.parent.right
                 if uncle.color == "red":
+                    self.recolors += 1
                     node.parent.color = "black"
                     uncle.color = "black"
                     node.parent.parent.color = "red"
@@ -141,6 +154,7 @@ class RedBlackTree:
             else:
                 uncle = node.parent.parent.left
                 if uncle.color == "red":
+                    self.recolors += 1
                     node.parent.color = "black"
                     uncle.color = "black"
                     node.parent.parent.color = "red"
@@ -221,6 +235,7 @@ class RedBlackTree:
                     self._rotate_left(node.parent)
                     sibling = node.parent.right
                 if sibling.left.color == "black" and sibling.right.color == "black":
+                    self.recolors += 1
                     sibling.color = "red"
                     node = node.parent
                 else:
@@ -245,6 +260,7 @@ class RedBlackTree:
                     self._rotate_right(node.parent)
                     sibling = node.parent.left
                 if sibling.right.color == "black" and sibling.left.color == "black":
+                    self.recolors += 1
                     sibling.color = "red"
                     node = node.parent
                 else:

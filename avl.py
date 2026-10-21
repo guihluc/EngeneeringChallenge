@@ -12,6 +12,10 @@ class Node:
 class AVLTree:
     def __init__(self) -> None:
         self.root: Node | None = None
+        self.rotations = 0
+
+    def height(self) -> int:
+        return self._height(self.root)
 
     def _height(self, node: Node | None) -> int:
         if node is None:
@@ -28,6 +32,7 @@ class AVLTree:
         child = node.left
         if child is None:
             return node
+        self.rotations += 1
         node.left = child.right
         child.right = node
         self._update(node)
@@ -38,6 +43,7 @@ class AVLTree:
         child = node.right
         if child is None:
             return node
+        self.rotations += 1
         node.right = child.left
         child.left = node
         self._update(node)
