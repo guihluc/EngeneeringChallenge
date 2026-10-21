@@ -43,8 +43,10 @@ def check_red_black(tree: RedBlackTree) -> list[int]:
             assert low < node.key
         if high is not None:
             assert node.key < high
-        assert node.left.parent is node
-        assert node.right.parent is node
+        if node.left is not tree.nil:
+            assert node.left.parent is node
+        if node.right is not tree.nil:
+            assert node.right.parent is node
 
         if node.color == "red":
             assert node.left.color == "black"
@@ -71,6 +73,8 @@ class TreeOperationsTests(unittest.TestCase):
                 tree = tree_type()
                 self.assertFalse(tree.remove(10))
                 self.assertIsNone(tree.search(10))
+                self.assertEqual(tree.in_order(), [])
+                self.assertEqual(tree.show(), "(árvore vazia)")
                 self.assertTrue(tree.insert(10))
                 self.assertTrue(tree.insert(5))
                 self.assertTrue(tree.insert(15))
@@ -79,6 +83,14 @@ class TreeOperationsTests(unittest.TestCase):
                 self.assertIsNone(tree.search(7))
                 self.assertFalse(tree.remove(7))
                 self.assertEqual(check(tree), [5, 10, 15])
+                self.assertEqual(tree.in_order(), [5, 10, 15])
+                view = tree.show()
+                self.assertIn("Raiz: 10", view)
+                self.assertIn("  Esquerda: 5", view)
+                self.assertIn("  Direita: 15", view)
+                if tree_type is RedBlackTree:
+                    self.assertIn("(BLACK)", view)
+                    self.assertIn("(RED)", view)
                 self.assertTrue(tree.remove(10))
                 self.assertIsNone(tree.search(10))
                 self.assertEqual(check(tree), [5, 15])
@@ -130,7 +142,7 @@ class MainProgramTests(unittest.TestCase):
             self.assertIsInstance(choose_tree(), RedBlackTree)
 
     def test_run_operations(self):
-        choices = ["1", "1", "8", "2", "8", "3", "8", "0"]
+        choices = ["1", "1", "8", "2", "8", "4", "5", "3", "8", "0"]
         output = StringIO()
         with patch("builtins.input", side_effect=choices), redirect_stdout(output):
             run()
@@ -138,6 +150,8 @@ class MainProgramTests(unittest.TestCase):
         self.assertIn("Árvore AVL selecionada.", output.getvalue())
         self.assertIn("8 foi inserido.", output.getvalue())
         self.assertIn("8 foi encontrado.", output.getvalue())
+        self.assertIn("Elementos em ordem crescente: 8", output.getvalue())
+        self.assertIn("Raiz: 8", output.getvalue())
         self.assertIn("8 foi removido.", output.getvalue())
 
 

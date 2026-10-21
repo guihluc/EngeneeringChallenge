@@ -90,6 +90,35 @@ class AVLTree:
                 node = node.right
         return None
 
+    def in_order(self) -> list[int]:
+        keys: list[int] = []
+
+        def visit(node: Node | None) -> None:
+            if node is None:
+                return
+            visit(node.left)
+            keys.append(node.key)
+            visit(node.right)
+
+        visit(self.root)
+        return keys
+
+    def show(self) -> str:
+        if self.root is None:
+            return "(árvore vazia)"
+
+        lines: list[str] = []
+
+        def visit(node: Node | None, depth: int, side: str) -> None:
+            if node is None:
+                return
+            lines.append(f"{'  ' * depth}{side}: {node.key}")
+            visit(node.left, depth + 1, "Esquerda")
+            visit(node.right, depth + 1, "Direita")
+
+        visit(self.root, 0, "Raiz")
+        return "\n".join(lines)
+
     def remove(self, key: int) -> bool:
         self.root, removed = self._remove(self.root, key)
         return removed

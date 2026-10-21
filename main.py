@@ -35,6 +35,8 @@ def run() -> None:
         print("1 - Inserir elemento")
         print("2 - Buscar elemento")
         print("3 - Remover elemento")
+        print("4 - Exibir elementos em ordem crescente")
+        print("5 - Mostrar estrutura da árvore")
         print("0 - Sair")
         choice = input("Opção: ").strip()
 
@@ -56,6 +58,14 @@ def run() -> None:
                 print(f"{key} foi removido.\n")
             else:
                 print(f"{key} não existe na árvore.\n")
+        elif choice == "4":
+            keys = tree.in_order()
+            if keys:
+                print(f"Elementos em ordem crescente: {', '.join(map(str, keys))}\n")
+            else:
+                print("A árvore está vazia.\n")
+        elif choice == "5":
+            print(tree.show(), end="\n\n")
         elif choice == "0":
             print("Programa encerrado.")
             return

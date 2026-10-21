@@ -29,6 +29,37 @@ class RedBlackTree:
                 node = node.right
         return None
 
+    def in_order(self) -> list[int]:
+        keys: list[int] = []
+
+        def visit(node: Node) -> None:
+            if node is self.nil:
+                return
+            visit(node.left)
+            keys.append(node.key)
+            visit(node.right)
+
+        visit(self.root)
+        return keys
+
+    def show(self) -> str:
+        if self.root is self.nil:
+            return "(árvore vazia)"
+
+        lines: list[str] = []
+
+        def visit(node: Node, depth: int, side: str) -> None:
+            if node is self.nil:
+                return
+            lines.append(
+                f"{'  ' * depth}{side}: {node.key} ({node.color.upper()})"
+            )
+            visit(node.left, depth + 1, "Esquerda")
+            visit(node.right, depth + 1, "Direita")
+
+        visit(self.root, 0, "Raiz")
+        return "\n".join(lines)
+
     def insert(self, key: int) -> bool:
         parent = self.nil
         node = self.root
